@@ -1,0 +1,101 @@
+# Fixture 02 — Executive Q3 Review (Light Mode, Pyramid Arc)
+
+# --- SLIDE 1: Executive Summary (Answer First) ---
+slide.new={"layout":"blank"}
+slide.notes={"text":"Lead with the answer: Q3 revenue grew 34% YoY while gross margin expanded 420 bps, putting us ahead of the FY26 plan."}
+
+insert.textBox={"rect":[48,48,864,24],"text":"Q3 EXECUTIVE REVIEW  ·  BOARD UPDATE"}
+format.fontDialog={"family":"Inter","size":11,"bold":true,"color":"#1D4ED8"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"kicker"}
+
+insert.textBox={"rect":[48,80,864,54],"text":"Q3 Revenue Grew 34% With Expanding Margins"}
+format.fontDialog={"family":"Source Serif 4","size":36,"bold":true,"color":"#0F172A"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"slide-title"}
+
+# 3 KPI Cards
+shape.insert={"preset":"roundRect","rect":[48,170,272,170],"text":"$18.4M\nQ3 ARR (+34% YoY)"}
+shape.fill={"color":"#FFFFFF"}
+shape.line={"color":"#E2E8F0","width":1}
+shape.smoothCorners={"smoothing":40,"radius":10}
+format.fontDialog={"family":"Inter","size":22,"bold":true,"color":"#1D4ED8"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":24,"top":20,"right":24,"bottom":20}
+format.lineSpacing={"lines":1.35}
+shape.rename={"name":"kpi-arr"}
+
+shape.insert={"preset":"roundRect","rect":[344,170,272,170],"text":"78.2%\nGross Margin (+420 bps)"}
+shape.fill={"color":"#FFFFFF"}
+shape.line={"color":"#E2E8F0","width":1}
+shape.smoothCorners={"smoothing":40,"radius":10}
+format.fontDialog={"family":"Inter","size":22,"bold":true,"color":"#059669"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":24,"top":20,"right":24,"bottom":20}
+format.lineSpacing={"lines":1.35}
+shape.rename={"name":"kpi-margin"}
+
+shape.insert={"preset":"roundRect","rect":[640,170,272,170],"text":"124%\nNet Dollar Retention"}
+shape.fill={"color":"#FFFFFF"}
+shape.line={"color":"#E2E8F0","width":1}
+shape.smoothCorners={"smoothing":40,"radius":10}
+format.fontDialog={"family":"Inter","size":22,"bold":true,"color":"#0F172A"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":24,"top":20,"right":24,"bottom":20}
+format.lineSpacing={"lines":1.35}
+shape.rename={"name":"kpi-ndr"}
+
+insert.textBox={"rect":[48,380,864,64],"text":"Decision Requested: Approve $1.2M Q4 enterprise expansion budget to capture Nordic pipeline."}
+format.fontDialog={"family":"Inter","size":16,"color":"#475569"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"decision-line"}
+
+# --- SLIDE 2: Morph Spotlight on Left KPI (Non-Crossing Trajectory!) ---
+slide.new={"layout":"blank"}
+transition.set={"kind":"morph","duration":700}
+slide.notes={"text":"Expand the ARR card in place on the left while margin and retention compress cleanly on the right—zero crossing trajectories."}
+
+insert.textBox={"rect":[48,48,864,54],"text":"Enterprise Expansion Drove 68% of Net-New ARR"}
+format.fontDialog={"family":"Source Serif 4","size":36,"bold":true,"color":"#0F172A"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"slide-title"}
+
+# Expanded left KPI card
+shape.insert={"preset":"roundRect","rect":[48,136,540,340],"text":"$18.4M Q3 ARR (+34% YoY)\n\n• 14 new enterprise logos closed above $120K ACV\n• Average sales cycle compressed from 74 to 51 days\n• Zero churn in top-50 accounts"}
+shape.fill={"color":"#FFFFFF"}
+shape.line={"color":"#1D4ED8","width":1.5}
+shape.smoothCorners={"smoothing":40,"radius":10}
+format.fontDialog={"family":"Inter","size":16,"color":"#0F172A"}
+format.align={"align":"left"}
+format.anchor={"anchor":"top"}
+format.margins={"left":28,"top":28,"right":28,"bottom":28}
+format.lineSpacing={"lines":1.45}
+shape.rename={"name":"kpi-arr"}
+
+# Right stacked companion cards
+shape.insert={"preset":"roundRect","rect":[616,136,296,156],"text":"78.2% Gross Margin\nInfra efficiency gains."}
+shape.fill={"color":"#FFFFFF"}
+shape.line={"color":"#E2E8F0","width":1}
+shape.smoothCorners={"smoothing":40,"radius":10}
+format.fontDialog={"family":"Inter","size":15,"color":"#475569"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":22,"top":18,"right":22,"bottom":18}
+shape.rename={"name":"kpi-margin"}
+
+shape.insert={"preset":"roundRect","rect":[616,320,296,156],"text":"124% Net Retention\nMulti-team seat expansion."}
+shape.fill={"color":"#FFFFFF"}
+shape.line={"color":"#E2E8F0","width":1}
+shape.smoothCorners={"smoothing":40,"radius":10}
+format.fontDialog={"family":"Inter","size":15,"color":"#475569"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":22,"top":18,"right":22,"bottom":18}
+shape.rename={"name":"kpi-ndr"}

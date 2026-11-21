@@ -1,0 +1,13 @@
+# Local binaries & caches
+.tools/
+node_modules/
+.DS_Store
+
+# Local deck projects (may contain private or client material)
+projects/
+
+# Temporary test outputs & eval run artifacts
+tmp/
+out/
+evals/runs/
+*.log

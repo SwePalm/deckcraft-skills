@@ -1,0 +1,93 @@
+# Fixture 03 — Hybrid Dark/Light Keynote with Per-Slide Native Backgrounds & Varied Transitions
+
+# --- SLIDE 1: Dark Ocean Cover (Native per-slide background!) ---
+slide.new={"layout":"blank"}
+design.background={"color":"#061527"}
+slide.notes={"text":"Open on deep ocean canvas with crisp maritime contrast."}
+
+insert.textBox={"rect":[48,136,480,24],"text":"HYBRID KEYNOTE  ·  DUAL-MODE DESIGN.MD"}
+format.fontDialog={"family":"Inter","size":12,"bold":true,"color":"#38BDF8"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"kicker-1"}
+
+insert.textBox={"rect":[48,174,780,124],"text":"Cinematic Dark Covers,\nCrisp Analytical Slides"}
+format.fontDialog={"family":"Source Serif 4","size":42,"bold":true,"color":"#F8FAFC"}
+format.lineSpacing={"lines":1.14}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"hero-title"}
+
+insert.textBox={"rect":[48,314,640,56],"text":"Dual-mode tokens and per-slide native backgrounds pass WCAG with zero false positives."}
+format.fontDialog={"family":"Inter","size":17,"color":"#94B0CC"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"hero-sub"}
+
+# --- SLIDE 2: Light Paper Analytical Slide (Uncover Upward!) ---
+slide.new={"layout":"blank"}
+design.background={"color":"#F4F7FA"}
+transition.set={"kind":"uncover","option":"u","duration":700}
+slide.notes={"text":"Lift the dark cover to reveal the crisp light analytical slide."}
+
+insert.textBox={"rect":[48,48,420,22],"text":"ANALYTICAL LAYER"}
+format.fontDialog={"family":"Inter","size":12,"bold":true,"color":"#006699"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"kicker-2"}
+
+insert.textBox={"rect":[48,74,864,52],"text":"Dual Palettes Keep Brand Linting Clean"}
+format.fontDialog={"family":"Source Serif 4","size":36,"bold":true,"color":"#0C2340"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"slide-title"}
+
+shape.insert={"preset":"roundRect","rect":[48,156,416,280],"text":"Light Surface\n\nCrisp paper framing for charts, roadmaps, and structured evidence."}
+shape.fill={"color":"#FFFFFF"}
+shape.line={"color":"#DCE5EF","width":1}
+shape.smoothCorners={"smoothing":50,"radius":10}
+format.fontDialog={"family":"Inter","size":16,"color":"#0C2340"}
+format.align={"align":"left"}
+format.anchor={"anchor":"top"}
+format.margins={"left":24,"top":24,"right":24,"bottom":24}
+format.lineSpacing={"lines":1.4}
+shape.rename={"name":"card-light"}
+
+shape.insert={"preset":"roundRect","rect":[496,156,416,280],"text":"Dark Focal Moments\n\nNative per-slide dark backgrounds for 3D covers and executive closes."}
+shape.fill={"color":"#061527"}
+shape.line={"color":"#006699","width":1.5}
+shape.smoothCorners={"smoothing":50,"radius":10}
+format.fontDialog={"family":"Inter","size":16,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.anchor={"anchor":"top"}
+format.margins={"left":24,"top":24,"right":24,"bottom":24}
+format.lineSpacing={"lines":1.4}
+shape.rename={"name":"card-dark"}
+
+# --- SLIDE 3: Dark Close (Push Left!) ---
+slide.new={"layout":"blank"}
+design.background={"color":"#061527"}
+transition.set={"kind":"push","option":"l","duration":650}
+slide.notes={"text":"Close cleanly on deep ocean with zero contrast or brand-token warnings."}
+
+insert.textBox={"rect":[48,48,420,22],"text":"NEXT STEP"}
+format.fontDialog={"family":"Inter","size":12,"bold":true,"color":"#2DD4BF"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"kicker-3"}
+
+insert.textBox={"rect":[48,74,864,52],"text":"Zero Blockers, Zero False Positives"}
+format.fontDialog={"family":"Source Serif 4","size":36,"bold":true,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"slide-title"}
+
+shape.insert={"preset":"roundRect","rect":[48,164,864,140],"text":"Every dark and light slide is WCAG-verified, brand-locked, and transition-choreographed."}
+shape.fill={"color":"#0F2540"}
+shape.line={"color":"#2DD4BF","width":1.5}
+shape.smoothCorners={"smoothing":50,"radius":12}
+format.fontDialog={"family":"Inter","size":18,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":28,"top":20,"right":28,"bottom":20}
+shape.rename={"name":"close-card"}

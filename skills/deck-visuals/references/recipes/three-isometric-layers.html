@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+    canvas { display: block; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from "/node_modules/three/build/three.module.js";
+
+    const tokens = window.BRAND_TOKENS || {};
+    const p = tokens.palette || {};
+    const dp = tokens.darkPalette || {};
+    const primary = p.primary || "#006699";
+    const accent = p.accent || "#0F8A6C";
+    const deep = dp.background || p.text || "#0C2340";
+    const edge1 = dp.primary || "#38BDF8";
+    const edge2 = dp.accent || "#2DD4BF";
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const aspect = width / height;
+    const d = 3.55;
+    const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 0.1, 100);
+    camera.position.set(6.5, 5.2, 6.5);
+    camera.lookAt(0, 0.15, 0);
+
+    scene.add(new THREE.AmbientLight("#FFFFFF", 0.9));
+    const key = new THREE.DirectionalLight(edge1, 2.2);
+    key.position.set(6, 10, 6);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(edge2, 1.5);
+    fill.position.set(-6, 4, -4);
+    scene.add(fill);
+
+    const layers = [
+      { y: -1.65, color: deep, edge: edge1, opacity: 0.96 },
+      { y: -0.50, color: primary, edge: edge1, opacity: 0.88 },
+      { y: 0.65, color: accent, edge: edge2, opacity: 0.84 },
+      { y: 1.80, color: p.secondary || primary, edge: edge1, opacity: 0.78 },
+    ];
+
+    const stackGroup = new THREE.Group();
+    scene.add(stackGroup);
+
+    layers.forEach((l, idx) => {
+      const geo = new THREE.BoxGeometry(3.4, 0.22, 2.5);
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(l.color),
+        emissive: new THREE.Color(l.color),
+        emissiveIntensity: 0.12,
+        metalness: 0.2,
+        roughness: 0.18,
+        clearcoat: 1.0,
+        transparent: true,
+        opacity: l.opacity,
+      });
+      const slab = new THREE.Mesh(geo, mat);
+      slab.position.y = l.y;
+      stackGroup.add(slab);
+
+      const line = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geo),
+        new THREE.LineBasicMaterial({ color: l.edge, transparent: true, opacity: 0.9 })
+      );
+      line.position.y = l.y;
+      stackGroup.add(line);
+
+      for (let i = -1; i <= 1; i++) {
+        const dot = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.11, 0.11, 0.04, 24),
+          new THREE.MeshBasicMaterial({ color: idx === 2 ? edge2 : edge1 })
+        );
+        dot.position.set(i * 0.9, l.y + 0.13, 0);
+        stackGroup.add(dot);
+      }
+    });
+
+    [-0.9, 0, 0.9].forEach((xPos, i) => {
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.025, 0.025, 3.6, 12),
+        new THREE.MeshBasicMaterial({ color: i === 1 ? edge2 : edge1, transparent: true, opacity: 0.65 })
+      );
+      beam.position.set(xPos, 0.1, 0);
+      stackGroup.add(beam);
+    });
+
+    window.renderFrame = () => renderer.render(scene, camera);
+    window.renderFrame(0);
+  </script>
+</body>
+</html>

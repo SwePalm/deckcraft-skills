@@ -1,0 +1,111 @@
+# Fixture 01 — Nordic Slate Keynote (Dark Mode, Non-Crossing Morph)
+
+# --- SLIDE 1: Editorial Title ---
+slide.new={"layout":"blank"}
+slide.notes={"text":"Open calmly: narrative and brand tokens drive the deck, not brittle XML templates."}
+
+insert.textBox={"rect":[48,148,440,28],"text":"NORDIC SLATE  ·  DECKCRAFT ENGINE"}
+format.fontDialog={"family":"Inter","size":12,"bold":true,"color":"#38BDF8"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"kicker"}
+
+insert.textBox={"rect":[48,186,780,124],"text":"Narrative-First Presentations\nBuilt on Open Primitives"}
+format.fontDialog={"family":"Inter","size":42,"bold":true,"color":"#F8FAFC"}
+format.lineSpacing={"lines":1.15}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"hero-title"}
+
+insert.textBox={"rect":[48,326,640,60],"text":"DESIGN.md brand tokens, local 3D/D3 studios, and 3-layer verification."}
+format.fontDialog={"family":"Inter","size":18,"color":"#94A3B8"}
+format.lineSpacing={"lines":1.35}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"hero-subtitle"}
+
+# --- SLIDE 2: Three Pillars Overview ---
+slide.new={"layout":"blank"}
+transition.set={"kind":"morph","duration":700}
+slide.notes={"text":"Three pillars: DESIGN.md tokens, DeckCraft's native engine, and Check Report verification."}
+
+insert.textBox={"rect":[48,48,864,52],"text":"Three Pillars Replace Brittle Slideware"}
+format.fontDialog={"family":"Inter","size":34,"bold":true,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"slide-title"}
+
+shape.insert={"preset":"roundRect","rect":[48,136,272,280],"text":"01  DESIGN.md\n\nOne brand file feeds themes, 3D, and charts."}
+shape.fill={"color":"#15223B"}
+shape.line={"color":"#38BDF8","width":1.5}
+shape.smoothCorners={"smoothing":65,"radius":14}
+format.fontDialog={"family":"Inter","size":16,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.anchor={"anchor":"top"}
+format.margins={"left":24,"top":28,"right":24,"bottom":24}
+format.lineSpacing={"lines":1.35}
+shape.rename={"name":"card-brand"}
+
+shape.insert={"preset":"roundRect","rect":[344,136,272,280],"text":"02  DeckCraft\n\n331 native commands and Morph choreography."}
+shape.fill={"color":"#15223B"}
+shape.line={"color":"#1E3052","width":1}
+shape.smoothCorners={"smoothing":65,"radius":14}
+format.fontDialog={"family":"Inter","size":16,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.anchor={"anchor":"top"}
+format.margins={"left":24,"top":28,"right":24,"bottom":24}
+format.lineSpacing={"lines":1.35}
+shape.rename={"name":"card-engine"}
+
+shape.insert={"preset":"roundRect","rect":[640,136,272,280],"text":"03  Check Report\n\nPixel WCAG contrast and narrative evals."}
+shape.fill={"color":"#15223B"}
+shape.line={"color":"#1E3052","width":1}
+shape.smoothCorners={"smoothing":65,"radius":14}
+format.fontDialog={"family":"Inter","size":16,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.anchor={"anchor":"top"}
+format.margins={"left":24,"top":28,"right":24,"bottom":24}
+format.lineSpacing={"lines":1.35}
+shape.rename={"name":"card-evals"}
+
+# --- SLIDE 3: Non-Crossing Morph Zoom into Pillar 1 (Left stays Left!) ---
+slide.new={"layout":"blank"}
+transition.set={"kind":"morph","duration":750}
+slide.notes={"text":"Expand Pillar 1 in place on the left while Pillars 2 and 3 compress smoothly onto the right rail—zero crossing trajectories."}
+
+insert.textBox={"rect":[48,48,864,52],"text":"One Brand File Feeds Every Visual Tool"}
+format.fontDialog={"family":"Inter","size":34,"bold":true,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.margins={"left":0,"top":0,"right":0,"bottom":0}
+shape.rename={"name":"slide-title"}
+
+shape.insert={"preset":"roundRect","rect":[48,136,544,340],"text":"01  DESIGN.md\n\n• YAML tokens compile directly to DeckCraft\n• Three.js and D3 read the same tokens.json\n• WCAG contrast verified before slide one"}
+shape.fill={"color":"#15223B"}
+shape.line={"color":"#38BDF8","width":2}
+shape.smoothCorners={"smoothing":65,"radius":14}
+format.fontDialog={"family":"Inter","size":17,"color":"#F8FAFC"}
+format.align={"align":"left"}
+format.anchor={"anchor":"top"}
+format.margins={"left":28,"top":32,"right":28,"bottom":28}
+format.lineSpacing={"lines":1.45}
+shape.rename={"name":"card-brand"}
+
+shape.insert={"preset":"roundRect","rect":[620,136,292,156],"text":"02  DeckCraft\n\nNative Morph & 2x renders."}
+shape.fill={"color":"#15223B"}
+shape.line={"color":"#1E3052","width":1}
+shape.smoothCorners={"smoothing":65,"radius":14}
+format.fontDialog={"family":"Inter","size":14,"color":"#94A3B8"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":22,"top":18,"right":22,"bottom":18}
+shape.rename={"name":"card-engine"}
+
+shape.insert={"preset":"roundRect","rect":[620,320,292,156],"text":"03  Check Report\n\nDeterministic lint + cold critic."}
+shape.fill={"color":"#15223B"}
+shape.line={"color":"#1E3052","width":1}
+shape.smoothCorners={"smoothing":65,"radius":14}
+format.fontDialog={"family":"Inter","size":14,"color":"#94A3B8"}
+format.align={"align":"left"}
+format.anchor={"anchor":"middle"}
+format.margins={"left":22,"top":18,"right":22,"bottom":18}
+shape.rename={"name":"card-evals"}

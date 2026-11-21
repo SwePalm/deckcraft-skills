@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check Report & Review Workbench</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #131b2e;
+      --panel-2: #1a243d;
+      --border: #263352;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --good: #34d399;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 24px 64px; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 18px; margin-bottom: 24px; }
+    .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+    h1 { margin: 4px 0 0; font-size: 26px; }
+    .badge { padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+    .badge.pass { background: rgba(52, 211, 153, 0.16); color: var(--good); }
+    .badge.fail { background: rgba(251, 113, 133, 0.16); color: var(--bad); }
+    .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+    .panel h2 { margin: 0 0 10px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .count { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); }
+    ul { margin: 0; padding-left: 18px; font-size: 13px; color: #cbd5e1; }
+    li { margin-bottom: 6px; }
+    .slides-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 28px; }
+    .slide-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+    .slide-card img { width: 100%; display: block; border-bottom: 1px solid var(--border); }
+    .slide-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .slide-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag-btn { background: var(--panel-2); color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .tag-btn.active { background: rgba(251, 191, 36, 0.18); color: var(--warn); border-color: var(--warn); }
+    input.miss-note { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+    .trans-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    .trans-strip img { width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 12px; }
+    button.primary { background: var(--accent); color: #06101f; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 18px; font-weight: 600; font-size: 14px; cursor: pointer; }
+    .status { font-size: 13px; color: var(--good); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="kicker">Deck Eval · Check Report Before Result</div>
+        <h1 id="deck-title">Presentation Review</h1>
+      </div>
+      <span id="status-badge" class="badge pass">PASS</span>
+    </header>
+
+    <div class="report-grid" id="report-grid"></div>
+
+    <div class="kicker" style="margin-bottom:10px;">Rendered Slides & Miss Tagging (Fix the System, Not Just the Draft)</div>
+    <div class="slides-grid" id="slides-grid"></div>
+
+    <div id="transitions-wrap" style="margin-bottom:28px;"></div>
+
+    <div class="panel">
+      <div class="kicker">Save Review</div>
+      <p style="margin:6px 0 12px; font-size:14px; color:var(--muted);">Tag any slide miss above with its root cause (Narrative, Brand, Visual, or Check) and save directly into the project folder so the agent upgrades the system before re-rendering.</p>
+      <div class="actions">
+        <button class="primary" id="btn-save-review">Save Review to Project</button>
+        <span class="status" id="status-msg"></span>
+      </div>
+    </div>
+  </div>
+
+  <script id="review-data" type="application/json">__REVIEW_JSON__</script>
+  <script>
+    const DATA = JSON.parse(document.getElementById("review-data").textContent);
+    const report = DATA.report;
+    const misses = {}; // slideIdx -> { tags: Set, note: string }
+
+    document.getElementById("deck-title").textContent = DATA.deckName || "Presentation Review";
+    const badge = document.getElementById("status-badge");
+    badge.textContent = report.summary.pass ? "GATE 1 PASS" : `BLOCKED (${report.summary.blocksSigning})`;
+    badge.className = `badge ${report.summary.pass ? "pass" : "fail"}`;
+
+    const el = (tag, attrs = {}, text = "") => {
+      const n = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text) n.textContent = text;
+      return n;
+    };
+
+    // Render Check Report cards
+    const rg = document.getElementById("report-grid");
+    const buckets = [
+      { title: "Blocks Signing", key: "blocks_signing", color: "#fb7185" },
+      { title: "Fix If Time", key: "fix_if_time", color: "#fbbf24" },
+      { title: "Cosmetic", key: "cosmetic", color: "#94a3b8" },
+    ];
+    for (const b of buckets) {
+      const items = report.findings.filter((f) => f.severity === b.key);
+      const p = el("div", { class: "panel" });
+      const h = el("h2");
+      h.appendChild(el("span", { style: `color:${b.color}` }, b.title));
+      h.appendChild(el("span", { class: "count" }, String(items.length)));
+      p.appendChild(h);
+      const ul = el("ul");
+      if (items.length === 0) ul.appendChild(el("li", {}, "None."));
+      else items.forEach((f) => ul.appendChild(el("li", {}, `[${f.check}] ${f.slide !== null ? `Slide ${f.slide + 1}` : "Deck"}: ${f.message}`)));
+      p.appendChild(ul);
+      rg.appendChild(p);
+    }
+
+    // Explicit Not Checked card
+    const ncPanel = el("div", { class: "panel" });
+    ncPanel.appendChild(el("h2", {}, "Not Checked (Explicit Boundary)"));
+    const ncUl = el("ul");
+    (report.notChecked || []).forEach((item) => ncUl.appendChild(el("li", {}, item)));
+    ncPanel.appendChild(ncUl);
+    rg.appendChild(ncPanel);
+
+    // Render slide cards with Miss Tagging
+    const sg = document.getElementById("slides-grid");
+    const CATEGORIES = ["Narrative", "Brand", "Visual", "Check"];
+    DATA.slides.forEach((s, idx) => {
+      misses[idx] = { tags: new Set(), note: "" };
+      const card = el("div", { class: "slide-card" });
+      card.appendChild(el("img", { src: s.dataUri, alt: `Slide ${idx + 1}` }));
+      const body = el("div", { class: "slide-body" });
+      const head = el("div", { class: "slide-head" });
+      head.appendChild(el("span", {}, `Slide ${idx + 1}`));
+      const slideFindings = report.findings.filter((f) => f.slide === idx);
+      head.appendChild(el("span", { style: "color:#94a3b8;font-weight:500" }, `${slideFindings.length} finding(s)`));
+      body.appendChild(head);
+
+      const tagRow = el("div", { class: "tag-row" });
+      CATEGORIES.forEach((cat) => {
+        const btn = el("button", { class: "tag-btn", type: "button" }, `+ ${cat}`);
+        btn.addEventListener("click", () => {
+          if (misses[idx].tags.has(cat)) {
+            misses[idx].tags.delete(cat);
+            btn.classList.remove("active");
+          } else {
+            misses[idx].tags.add(cat);
+            btn.classList.add("active");
+          }
+        });
+        tagRow.appendChild(btn);
+      });
+      body.appendChild(tagRow);
+
+      const input = el("input", { class: "miss-note", type: "text", placeholder: "Optional note (e.g., tighten headline, adjust 3D contrast)..." });
+      input.addEventListener("input", () => { misses[idx].note = input.value; });
+      body.appendChild(input);
+
+      card.appendChild(body);
+      sg.appendChild(card);
+    });
+
+    // Render Morph transition strips if present
+    const tw = document.getElementById("transitions-wrap");
+    if (DATA.transitions && DATA.transitions.length > 0) {
+      tw.appendChild(el("div", { class: "kicker", style: "margin-bottom:10px;" }, "Morph & Transition Frame Strips (t = 0.25 · 0.50 · 0.75)"));
+      DATA.transitions.forEach((tr) => {
+        const p = el("div", { class: "panel", style: "margin-bottom:14px;" });
+        p.appendChild(el("div", { style: "font-size:13px;font-weight:700;" }, `Transition into Slide ${tr.slideIndex + 1} (${tr.transition})`));
+        const strip = el("div", { class: "trans-strip" });
+        tr.frames.forEach((uri, fi) => strip.appendChild(el("img", { src: uri, alt: `Transition frame ${fi + 1}` })));
+        p.appendChild(strip);
+        tw.appendChild(p);
+      });
+    }
+
+    function buildMissesMd() {
+      const lines = [`# MISSES.md — ${DATA.deckName}`, ``];
+      let count = 0;
+      Object.entries(misses).forEach(([idx, m]) => {
+        if (m.tags.size > 0 || m.note.trim()) {
+          count++;
+          const tags = [...m.tags].map((t) => `[${t}]`).join(" ") || "[General]";
+          lines.push(`- **Slide ${Number(idx) + 1}** ${tags}: ${m.note.trim() || "(flagged for review)"}`);
+        }
+      });
+      if (count === 0) lines.push(`- No misses tagged — approved.`);
+      lines.push(``);
+      return lines.join("\n");
+    }
+
+    const statusMsg = document.getElementById("status-msg");
+    document.getElementById("btn-save-review").addEventListener("click", async () => {
+      const md = buildMissesMd();
+      const files = {
+        "MISSES.md": md,
+        "review-decision.json": JSON.stringify(
+          {
+            deckName: DATA.deckName,
+            approved: Object.values(misses).every((m) => m.tags.size === 0 && !m.note.trim()),
+            misses: Object.entries(misses)
+              .filter(([, m]) => m.tags.size > 0 || m.note.trim())
+              .map(([idx, m]) => ({ slide: Number(idx) + 1, tags: [...m.tags], note: m.note.trim() })),
+            savedAt: new Date().toISOString(),
+          },
+          null,
+          2
+        ) + "\n",
+      };
+
+      if (window.location.protocol.startsWith("http")) {
+        try {
+          const resp = await fetch("/api/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ files }),
+          });
+          const res = await resp.json();
+          if (res.ok) {
+            statusMsg.textContent = "Saved MISSES.md directly to your project folder. You can close this tab—the agent has your feedback.";
+            return;
+          }
+        } catch {
+          // fall through to offline fallback
+        }
+      }
+
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "MISSES.md";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      statusMsg.textContent = "Opened offline (file://) — saved MISSES.md. Run via tools/serve_workbench.mjs for automatic project-folder saving.";
+    });
+  </script>
+</body>
+</html>

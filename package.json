@@ -1,0 +1,20 @@
+{
+  "name": "deckcraft-skills",
+  "version": "0.3.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Portable Agent Skills suite for narrative-first, DESIGN.md-aligned, DeckCraft-powered presentations with 3-layer evals and interactive coaching workbenches.",
+  "scripts": {
+    "check": "node tools/check.mjs",
+    "eval": "node evals/run_eval.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "d3": "^7.9.2",
+    "playwright": "^1.65.1",
+    "three": "^0.187.0"
+  }
+}

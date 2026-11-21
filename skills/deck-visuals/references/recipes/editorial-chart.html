@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+    svg { display: block; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <svg id="chart"></svg>
+  <script src="/node_modules/d3/dist/d3.min.js"></script>
+  <script>
+    const d3 = window.d3;
+
+    const tokens = window.BRAND_TOKENS || {};
+    const p = tokens.palette || {
+      background: "#0B1326",
+      surface: "#15223B",
+      surfaceAlt: "#1E3052",
+      text: "#F8FAFC",
+      textMuted: "#94A3B8",
+      primary: "#38BDF8",
+      accent: "#34D399",
+    };
+    const font = `${tokens.typography?.bodyFont || "Inter"}, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif`;
+
+    const data = window.VISUAL_DATA || {
+      title: "Build & Visual QA Turnaround Time",
+      subtitle: "Seconds per 3-slide deck iteration (lower is better)",
+      unit: "s",
+      items: [
+        { label: "LibreOffice + OOXML", value: 18.4, highlight: false },
+        { label: "Cloud Render API", value: 11.2, highlight: false },
+        { label: "DeckCraft Native", value: 2.8, highlight: true },
+      ],
+    };
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const margin = { top: 82, right: 72, bottom: 28, left: 190 };
+    const innerW = width - margin.left - margin.right;
+    const innerH = height - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart").attr("viewBox", `0 0 ${width} ${height}`);
+
+    if (!window.VISUAL_TRANSPARENT) {
+      svg.append("rect").attr("width", width).attr("height", height).attr("fill", p.background);
+    }
+
+    // Editorial title + subtitle
+    svg
+      .append("text")
+      .attr("x", 24)
+      .attr("y", 34)
+      .attr("fill", p.text)
+      .attr("font-family", font)
+      .attr("font-size", 22)
+      .attr("font-weight", 700)
+      .text(data.title);
+
+    svg
+      .append("text")
+      .attr("x", 24)
+      .attr("y", 58)
+      .attr("fill", p.textMuted)
+      .attr("font-family", font)
+      .attr("font-size", 13)
+      .text(data.subtitle);
+
+    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const maxVal = d3.max(data.items, (d) => d.value) || 1;
+    const x = d3.scaleLinear().domain([0, maxVal * 1.15]).range([0, innerW]);
+    const y = d3
+      .scaleBand()
+      .domain(data.items.map((d) => d.label))
+      .range([0, innerH])
+      .padding(0.36);
+
+    // Subtle vertical gridlines
+    const ticks = x.ticks(4);
+    g.selectAll("line.grid")
+      .data(ticks)
+      .join("line")
+      .attr("x1", (d) => x(d))
+      .attr("x2", (d) => x(d))
+      .attr("y1", 0)
+      .attr("y2", innerH)
+      .attr("stroke", p.surfaceAlt || "#1E3052")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "3,4");
+
+    // Bars
+    g.selectAll("rect.bar")
+      .data(data.items)
+      .join("rect")
+      .attr("x", 0)
+      .attr("y", (d) => y(d.label))
+      .attr("width", (d) => Math.max(4, x(d.value)))
+      .attr("height", y.bandwidth())
+      .attr("rx", 8)
+      .attr("fill", (d) => (d.highlight ? p.primary : p.surfaceAlt || "#293B5F"));
+
+    // Category labels
+    g.selectAll("text.label")
+      .data(data.items)
+      .join("text")
+      .attr("x", -16)
+      .attr("y", (d) => y(d.label) + y.bandwidth() / 2)
+      .attr("dy", "0.35em")
+      .attr("text-anchor", "end")
+      .attr("fill", (d) => (d.highlight ? p.text : p.textMuted))
+      .attr("font-family", font)
+      .attr("font-size", 15)
+      .attr("font-weight", (d) => (d.highlight ? 700 : 500))
+      .text((d) => d.label);
+
+    // Direct value labels
+    g.selectAll("text.val")
+      .data(data.items)
+      .join("text")
+      .attr("x", (d) => x(d.value) + 12)
+      .attr("y", (d) => y(d.label) + y.bandwidth() / 2)
+      .attr("dy", "0.35em")
+      .attr("fill", (d) => (d.highlight ? p.accent : p.textMuted))
+      .attr("font-family", font)
+      .attr("font-size", 16)
+      .attr("font-weight", 700)
+      .text((d) => `${d.value}${data.unit || ""}`);
+
+    window.renderFrame = () => {};
+  </script>
+</body>
+</html>
