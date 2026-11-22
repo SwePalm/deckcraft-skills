@@ -152,7 +152,8 @@ async function main() {
 
     if (opts.mode === "png") {
       await page.evaluate((tVal) => {
-        if (typeof window.renderFrame === "function") window.renderFrame(tVal);
+        const fn = window.renderFrame || window.__renderFrame;
+        if (typeof fn === "function") fn(tVal);
       }, opts.t);
       await page.screenshot({ path: outPath, omitBackground: opts.transparent });
 
@@ -198,6 +199,14 @@ async function main() {
         console.log(`Rendered PNG (${opts.width * opts.scale}×${opts.height * opts.scale}) → ${outPath}`);
       }
     } else if (opts.mode === "mp4") {
+      const hasHook = await page.evaluate(
+        () => typeof (window.renderFrame || window.__renderFrame) === "function"
+      );
+      if (!hasHook) {
+        throw new Error(
+          `Scene "${opts.scene}" does not define window.renderFrame(t). Refusing to encode a frozen MP4.`
+        );
+      }
       const totalFrames = Math.max(2, Math.round(opts.fps * opts.duration));
       const framesDir = path.join("/tmp", `dc-frames-${process.pid}-${Date.now()}`);
       fs.mkdirSync(framesDir, { recursive: true });
@@ -205,7 +214,8 @@ async function main() {
         for (let f = 0; f < totalFrames; f++) {
           const t = f / totalFrames;
           await page.evaluate((tVal) => {
-            if (typeof window.renderFrame === "function") window.renderFrame(tVal);
+            const fn = window.renderFrame || window.__renderFrame;
+            if (typeof fn === "function") fn(tVal);
           }, t);
           const framePath = path.join(framesDir, `frame-${String(f).padStart(5, "0")}.png`);
           await page.screenshot({ path: framePath, omitBackground: false });
