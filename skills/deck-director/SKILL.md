@@ -28,6 +28,11 @@ Before proposing directions or building anything, **check the project folder** f
    - Never interrogate the user with a list of abstract design questions.
    - Generate `direction-workbench.html` via `scripts/build_direction_workbench.mjs` and serve it
      locally with `node tools/serve_workbench.mjs --html build/direction-workbench.html --project-dir <project-dir>`.
+   - Populate `directions.json` with:
+     - `sources`: polymorphic grounding items (`{ label, kind: "file" | "web" | "chat", detail, selected }`) — 2+ items render an interactive source filter, 1 item renders a quiet grounding badge, 0 items hide cleanly.
+     - `focusAngles`: 3–4 clickable narrative lenses derived from the sources/conversation (`{ id, label, hook, recommendedFormat, recommended }`).
+     - `directions`: 2–3 candidate directions with `palette`, `arc`, `deliveryMode`, `beats` (`[{ title, thesis }]`), `perceptionContract`, `bestFor`, and `tradeoff`.
+     - Optional `defaultLength` (`short` | `standard` | `deep`), `defaultDetail` (`concise` | `standard` | `detailed`), `defaultLanguage`, and `defaultStyle` (`auto` by default so narrative chooses the format).
    - When the user clicks **Save Direction to Project**, `NARRATIVE.md`, `DESIGN.md`, and
      `direction-decision.json` are written **directly into `<project-dir>`**—zero copy/paste and
      zero manual file downloads—and the server exits cleanly so you immediately continue.

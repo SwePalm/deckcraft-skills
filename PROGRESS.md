@@ -73,7 +73,14 @@ Build a portable, open-source **Agent Skills** suite (following the Agent Skills
   - Built & verified 7-slide Cosmic Harmonics Bento explainer (`projects/riemann-2026/`) with `data-zone` auto-alignment.
   - Built & user-approved (`"approved": true`) 4-shot **Zero-Slide-Grammar Continuous 3D Camera Journey** (`projects/riemann-journey/output/riemann-3d-journey.pptx`) — one living Three.js 3D world with 4 continuous camera fly-through MP4s and native editable typography.
 
+## v0.4 Studio-Grade Direction Workbench UX (Complete ✓)
+- [x] **Source-Generated Story Angle Chips:** Clickable narrative lenses derived from files, web research, or conversation context + custom angle input; selecting an angle highlights the recommended Experience Format.
+- [x] **Same-Subject Visual Style Carousel + `Auto-select`:** Inline zero-network SVG thumbnails (`Auto-select`, `3D Camera Journey`, `Dark-Glass Bento`, `Editorial Monograph`, `Cinematic Film Beats`, `Spatial Blueprint`) so users choose visual grammar at a glance.
+- [x] **Compact Segmented Controls:** `Delivery` (`Live Stage` | `Pre-read`), `Length` (`Short` | `Standard` | `Deep`), `Detail` (`Concise` | `Standard` | `Detailed`), and `Language` selector.
+- [x] **Polymorphic Grounding / Sources:** Handles `file`, `web`, and `chat` sources with progressive disclosure (interactive checklist for 2+ sources, quiet grounding badge for 1 source, hidden for 0).
+- [x] **Editable Story Beats Drawer:** Toggleable inline beat preview/editor before saving directly to `NARRATIVE.md`, `DESIGN.md`, and `direction-decision.json`.
+
 ## Ideas for Next Session (v1.0 Packaging)
-- Initialize git repo, add `.agents/skills/` and `.claude/skills/` symlinks (portable across Antigravity, Claude Code, Cursor, Codex).
 - Add `tools/setup.mjs` one-command bootstrapper to download the right `deckcraft-cli` binary for macOS/Linux/Windows + install Playwright Chromium.
 - Add `lint_deck.mjs` awareness for `camera_journey` mode (so intentional `cut` transitions between full-bleed 3D fly-through MP4s aren't flagged as `transition_monotony`).
+- Promote the 4-shot 3D Camera Journey rig into a parameterized recipe in `skills/deck-visuals/references/recipes/`.
