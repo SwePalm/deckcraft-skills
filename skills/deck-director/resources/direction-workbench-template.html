@@ -204,7 +204,7 @@
       background: var(--panel);
       border: 1px dashed var(--border);
       border-radius: 14px;
-      padding: 12px 18px;
+      padding: 14px 18px;
       margin-bottom: 22px;
       display: flex;
       flex-wrap: wrap;
@@ -212,7 +212,40 @@
       align-items: center;
       gap: 12px;
     }
-    .brand-bar.loaded { border-style: solid; border-color: var(--good); }
+    .brand-bar.loaded {
+      border-style: solid;
+      border-color: var(--good);
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), var(--panel));
+    }
+    .brand-tokens-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .brand-rule-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .brand-rule-chip.good { background: var(--good-soft); color: var(--good); border-color: rgba(52, 211, 153, 0.35); }
+    .style-badge {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: rgba(11, 15, 25, 0.82);
+      color: var(--good);
+      border: 1px solid rgba(52, 211, 153, 0.4);
+    }
 
     /* Focus Angle Chips (NotebookLM Video Overview-inspired) */
     .focus-grid {
@@ -541,9 +574,10 @@
 
     <!-- Optional Brand DESIGN.md Picker -->
     <div class="brand-bar" id="brand-bar">
-      <div>
+      <div style="flex:1; min-width:260px;">
         <div style="font-size:13.5px; font-weight:700;" id="brand-bar-title">No custom DESIGN.md loaded yet</div>
         <div class="hint" id="brand-bar-sub">Optional: load your own DESIGN.md to lock the deck to your brand, or pick a direction below.</div>
+        <div class="brand-tokens-row" id="brand-tokens-row" style="display:none;"></div>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <input type="file" id="design-file-input" accept=".md,.txt" style="display:none" />
@@ -574,8 +608,8 @@
     <!-- 3. Candidate Brand & Narrative Directions -->
     <section class="section-block">
       <div class="section-head">
-        <span class="section-title">Candidate Directions</span>
-        <span class="section-hint">Compare palette, tone, and trade-offs side by side.</span>
+        <span class="section-title" id="directions-section-title">Candidate Directions</span>
+        <span class="section-hint" id="directions-section-hint">Compare palette, tone, and trade-offs side by side.</span>
       </div>
       <div class="grid" id="directions-grid"></div>
     </section>
@@ -900,6 +934,62 @@
       }
     }
 
+    // Lightweight client-side DESIGN.md parser (supports both standard YAML & real-world brand specs)
+    function parseDesignMdLite(md) {
+      if (!md || typeof md !== "string") return null;
+      const clean = md.replace(/\\#/g, "#");
+      const grabHex = (keys) => {
+        for (const k of keys) {
+          const re = new RegExp(`(?:^|[\\s,{])${k}\\s*:\\s*["']?(#[0-9a-fA-F]{6})["']?`, "i");
+          const m = clean.match(re);
+          if (m) return m[1].toUpperCase();
+        }
+        return null;
+      };
+      const nameMatch = clean.match(/name\s*:\s*["']([^"'\n]+)["']/i) || clean.match(/^#\s*DESIGN\.md\s*[—–-]\s*([^\n]+)/im);
+      const brandName = nameMatch ? nameMatch[1].trim() : "Custom Brand";
+      const primary = grabHex(["primary", "brand", "anchor"]) || "#02018C";
+      const accent = grabHex(["accent", "highlight", "emphasis"]) || primary;
+      const background = grabHex(["background", "beige", "canvas", "paper", "white"]) || "#FFFFFF";
+      const surface = grabHex(["surface", "white", "pale-blue", "light-blue", "surfaceAlt"]) || "#FFFFFF";
+      const surfaceAlt = grabHex(["surfaceAlt", "pale-blue", "light-blue", "pale-orange"]) || surface;
+      const text = grabHex(["text", "ink"]) || (isLightHex(background) ? primary : "#F8FAFC");
+      const textMuted = grabHex(["textMuted", "muted", "medium-blue"]) || (isLightHex(background) ? "#475569" : "#94A3B8");
+
+      const h1Match = clean.match(/h1\s*:\s*\{[^}]*fontFamily\s*:\s*["']([^"']+)["']/i) || clean.match(/display\s*:\s*["']([^"'\n]+)["']/i);
+      const bodyMatch = clean.match(/body(?:-md)?\s*:\s*\{[^}]*fontFamily\s*:\s*["']([^"']+)["']/i) || clean.match(/body\s*:\s*["']([^"'\n]+)["']/i);
+      const sharpContainers = /container-corners\s*:\s*["']?0(?:px)?["']?/i.test(clean) || /sharp-cornered/i.test(clean);
+      const accentOnly = /emphasiser\s+only|precision\s+emphasiser|never\s+an\s+environment/i.test(clean);
+      const supports3D = /3d\s+motion|3d\s+abstract/i.test(clean);
+      const checklistMatches = clean.match(/^\s*\d+\.\s+/gm);
+
+      const rules = [];
+      if (h1Match || bodyMatch) rules.push(`Fonts: ${[h1Match?.[1], bodyMatch?.[1]].filter(Boolean).join(" + ")}`);
+      if (sharpContainers) rules.push("Sharp containers (0px)");
+      if (accentOnly) rules.push("Accent = precision only");
+      if (supports3D) rules.push("3D abstract motion OK");
+      if (checklistMatches && checklistMatches.length >= 3) rules.push(`${checklistMatches.length} conformance rules`);
+
+      return {
+        brandName,
+        isLight: isLightHex(background),
+        sharpContainers,
+        supports3D,
+        rules,
+        palette: { background, surface, surfaceAlt, text, textMuted, primary, accent },
+        swatches: [...new Set([primary, accent, background, surface, surfaceAlt].filter(Boolean))],
+      };
+    }
+
+    function isLightHex(hex) {
+      const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || "");
+      if (!m) return false;
+      const lum = (0.299 * parseInt(m[1], 16) + 0.587 * parseInt(m[2], 16) + 0.114 * parseInt(m[3], 16)) / 255;
+      return lum > 0.62;
+    }
+
+    let parsedBrand = parseDesignMdLite(customDesignMd);
+
     // Visual Styles Carousel Renderer
     function renderStyleStrip() {
       const strip = document.getElementById("style-strip");
@@ -914,6 +1004,13 @@
         const thumb = el("div", { class: "style-thumb" });
         thumb.innerHTML = st.svg || "";
         thumb.appendChild(el("div", { class: "style-check" }, "✓"));
+        if (parsedBrand) {
+          const isMatch =
+            (parsedBrand.isLight && st.id === "editorial-monograph") ||
+            (parsedBrand.supports3D && st.id === "3d-journey") ||
+            (!parsedBrand.isLight && (st.id === "dark-bento" || st.id === "3d-journey"));
+          if (isMatch) thumb.appendChild(el("div", { class: "style-badge" }, "Brand match"));
+        }
         card.appendChild(thumb);
         card.appendChild(el("div", { class: "style-name" }, st.name));
         card.appendChild(el("div", { class: "style-sub" }, st.sub || ""));
@@ -923,18 +1020,39 @@
     }
 
     // Brand Bar
+    const brandTokensRow = document.getElementById("brand-tokens-row");
+    const dirSecTitle = document.getElementById("directions-section-title");
+    const dirSecHint = document.getElementById("directions-section-hint");
+
     function updateBrandBar() {
-      if (customDesignMd) {
+      parsedBrand = parseDesignMdLite(customDesignMd);
+      brandTokensRow.innerHTML = "";
+      if (parsedBrand) {
         brandBar.classList.add("loaded");
-        brandBarTitle.textContent = `Using your DESIGN.md${customDesignName ? ` (${customDesignName})` : ""}`;
-        brandBarSub.textContent = "Your DESIGN.md will be saved into the project folder and used to style the selected narrative direction.";
+        brandBarTitle.textContent = `Brand Locked: ${parsedBrand.brandName}${customDesignName ? ` (${customDesignName})` : ""}`;
+        brandBarSub.textContent = "Palette & brand guardrails are locked from your DESIGN.md — compare narrative arcs & visual treatments below.";
         btnClearDesign.style.display = "inline-block";
+
+        parsedBrand.swatches.forEach((hex) => {
+          brandTokensRow.appendChild(el("span", { class: "swatch", title: hex, style: { background: hex } }));
+        });
+        parsedBrand.rules.forEach((r) => {
+          brandTokensRow.appendChild(el("span", { class: "brand-rule-chip good" }, r));
+        });
+        brandTokensRow.style.display = "flex";
+        dirSecTitle.textContent = `Narrative & Visual Treatments (Styled for ${parsedBrand.brandName})`;
+        dirSecHint.textContent = "Brand palette is locked — pick the story structure and experience depth that fits your audience.";
       } else {
         brandBar.classList.remove("loaded");
         brandBarTitle.textContent = "No DESIGN.md found in project folder";
-        brandBarSub.textContent = "Optional: provide your own DESIGN.md, or pick one of the proposed directions below to generate one automatically.";
+        brandBarSub.textContent = "Optional: provide your own DESIGN.md to lock brand colors & rules, or pick one of the proposed directions below.";
         btnClearDesign.style.display = "none";
+        brandTokensRow.style.display = "none";
+        dirSecTitle.textContent = "Candidate Directions";
+        dirSecHint.textContent = "Compare palette, tone, and trade-offs side by side.";
       }
+      renderStyleStrip();
+      renderGrid();
     }
 
     document.getElementById("btn-load-design").addEventListener("click", () => {
@@ -1051,20 +1169,30 @@
         if (d.recommended) head.appendChild(el("span", { class: "rec-pill" }, "Recommended"));
         card.appendChild(head);
 
-        const p = d.palette;
+        const p = parsedBrand ? parsedBrand.palette : d.palette;
+        const boxRadius = parsedBrand?.sharpContainers ? "0px" : "5px";
         const preview = el("div", { class: "mini-slide", style: { background: p.background, color: p.text } });
         const top = el("div");
-        top.appendChild(el("div", { class: "mini-kicker", style: { color: p.primary } }, `${d.arc} · ${(d.deliveryMode || "live").toUpperCase()}`));
+        const kickerRow = el("div", { class: "mini-kicker", style: { color: p.primary, display: "flex", alignItems: "center", gap: "5px" } });
+        if (parsedBrand && p.accent && p.accent !== p.primary) {
+          kickerRow.appendChild(el("span", { style: { width: "6px", height: "6px", borderRadius: "999px", background: p.accent, display: "inline-block" } }));
+        }
+        kickerRow.appendChild(document.createTextNode(`${d.arc} · ${(d.deliveryMode || "live").toUpperCase()}`));
+        top.appendChild(kickerRow);
         top.appendChild(el("div", { class: "mini-h" }, d.sampleHeadline));
         top.appendChild(el("div", { class: "mini-sub", style: { color: p.textMuted } }, d.sampleSub));
         preview.appendChild(top);
 
         const boxes = el("div", { class: "mini-cards" });
-        [p.surface, p.surface, p.surface].forEach((bg, bIdx) => {
+        [p.surface, p.surfaceAlt || p.surface, p.surface].forEach((bg, bIdx) => {
           boxes.appendChild(
             el("div", {
               class: "mini-box",
-              style: { background: bg, border: bIdx === 1 ? `1.5px solid ${p.primary}` : `1px solid ${p.surfaceAlt || "rgba(255,255,255,0.08)"}` },
+              style: {
+                background: bg,
+                borderRadius: boxRadius,
+                border: bIdx === 1 ? `1.5px solid ${p.primary}` : `1px solid ${p.surfaceAlt || "rgba(255,255,255,0.08)"}`,
+              },
             })
           );
         });
