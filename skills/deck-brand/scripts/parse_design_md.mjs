@@ -96,6 +96,19 @@ function parseScalar(val) {
   if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
     return val.slice(1, -1);
   }
+  if (val.startsWith("{") && val.endsWith("}")) {
+    const obj = {};
+    const inner = val.slice(1, -1).trim();
+    if (!inner) return obj;
+    for (const part of inner.split(/,(?=(?:[^"']*["'][^"']*["'])*[^"']*$)/)) {
+      const idx = part.indexOf(":");
+      if (idx === -1) continue;
+      const k = part.slice(0, idx).trim();
+      const v = part.slice(idx + 1).trim();
+      obj[k] = parseScalar(v);
+    }
+    return obj;
+  }
   if (val.startsWith("[") && val.endsWith("]")) {
     return val
       .slice(1, -1)
@@ -172,15 +185,88 @@ function contrastRatio(hexA, hexB) {
   return Number(((lighter + 0.05) / (darker + 0.05)).toFixed(2));
 }
 
+const DECKCRAFT_BUNDLED_FONTS = new Set([
+  "inter",
+  "source serif 4",
+  "liberation mono",
+  "liberation sans",
+  "liberation serif",
+  "plus jakarta sans",
+  "dm sans",
+  "playfair display",
+  "merriweather",
+  "ibm plex sans",
+  "ibm plex mono",
+  "roboto",
+  "open sans",
+  "lato",
+  "montserrat",
+  "oswald",
+  "fira code",
+  "jetbrains mono",
+  "space grotesk",
+  "work sans",
+  "lora",
+  "pt serif",
+  "pt sans",
+]);
+
+function collectAllHexColors(obj, out = []) {
+  if (!obj) return out;
+  if (typeof obj === "string") {
+    const h = normalizeHex(obj);
+    if (h) out.push(h);
+    return out;
+  }
+  if (Array.isArray(obj)) {
+    obj.forEach((v) => collectAllHexColors(v, out));
+    return out;
+  }
+  if (typeof obj === "object") {
+    Object.values(obj).forEach((v) => collectAllHexColors(v, out));
+  }
+  return out;
+}
+
+function pickDeckcraftFont(requested, fallbacksMap, role) {
+  if (!requested) return { deckcraftFont: role === "mono" ? "Liberation Mono" : "Inter", substitution: null };
+  if (DECKCRAFT_BUNDLED_FONTS.has(requested.toLowerCase())) {
+    return { deckcraftFont: requested, substitution: null };
+  }
+  const declaredFallback = fallbacksMap?.[requested] || null;
+  const isSerif = /serif|display|times|garamond|georgia|editorial|playfair|didot|bodoni/i.test(
+    `${requested} ${declaredFallback || ""}`
+  );
+  const deckcraftFont = role === "mono" ? "Liberation Mono" : isSerif ? "Source Serif 4" : "Inter";
+  return {
+    deckcraftFont,
+    substitution: {
+      role,
+      requested,
+      deckcraftFont,
+      declaredFallback,
+      reason: `"${requested}" is not bundled in DeckCraft; substituted with bundled "${deckcraftFont}"${declaredFallback ? ` (brand fallback: "${declaredFallback}")` : ""}.`,
+    },
+  };
+}
+
 function parseDesignMd(markdown) {
-  let body = markdown;
+  const unescaped = markdown.replace(/\\#/g, "#");
+  let body = unescaped;
   const rawTokens = {};
 
-  // 1. YAML frontmatter
-  const fmMatch = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  // 1. YAML frontmatter (supports optional leading # title/comment lines before first ---)
+  const fmMatch = unescaped.match(/^(?:(?:#[^\n]*|\s*)\r?\n)*---\r?\n([\s\S]*?)\r?\n(?:---\r?\n?|(?=\r?\n##\s))/);
   if (fmMatch) {
     deepMerge(rawTokens, parseSimpleYaml(fmMatch[1]));
-    body = markdown.slice(fmMatch[0].length);
+    body = unescaped.slice(fmMatch[0].length);
+  } else {
+    // Also support real-world DESIGN.md that opens with --- and transitions straight into ## sections
+    const openFm = unescaped.match(/^(?:(?:#[^\n]*|\s*)\r?\n)*---\r?\n([\s\S]*?)(?=\r?\n##\s)/);
+    if (openFm) {
+      deepMerge(rawTokens, parseSimpleYaml(openFm[1]));
+      body = unescaped.slice(openFm[0].length);
+    }
   }
 
   // 2. Interleaved ```yaml blocks
@@ -220,7 +306,7 @@ function parseDesignMd(markdown) {
     }
   }
 
-  // Extract Do's and Don'ts bullets
+  // Extract Do's and Don'ts bullets + Conformance Checklist items
   const dos = [];
   const donts = [];
   const rulesText = sections["Do's and Don'ts"] || "";
@@ -230,32 +316,59 @@ function parseDesignMd(markdown) {
     else if (/^[-*]\s+\*\*Don'?t\b/i.test(t) || /^[-*]\s+Don'?t:/i.test(t)) donts.push(t.replace(/^[-*]\s+/, ""));
   }
 
-  // Normalize colors
+  const conformanceChecklist = [];
+  const checklistHeading = Object.keys(sections).find((k) => /conformance|checklist|brand rules/i.test(k));
+  if (checklistHeading) {
+    for (const line of sections[checklistHeading].split(/\r?\n/)) {
+      const m = line.trim().match(/^\d+\.\s+(.+)$/);
+      if (m) conformanceChecklist.push(m[1].trim());
+    }
+  }
+
+  // Normalize colors (supports both starter keys and real-world aliases like beige, pale-blue, white)
   const c = resolvedTokens.colors || {};
-  const background = normalizeHex(c.background || c.bg || c.surface) || "#0B1326";
+  const secColors = c.secondary && typeof c.secondary === "object" ? c.secondary : {};
+  const background =
+    normalizeHex(c.background || c.bg || c.beige || c.canvas || c.paper || c.white || c.surface) || "#0B1326";
   const isDark = relativeLuminance(background) < 0.25;
   const mode = resolvedTokens.mode || (isDark ? "dark" : "light");
 
+  const primaryHex = normalizeHex(c.primary || c.accent1) || "#38BDF8";
   const palette = {
     background,
-    surface: normalizeHex(c.surface || c.card) || (isDark ? "#152036" : "#F8FAFC"),
-    surfaceAlt: normalizeHex(c.surfaceAlt || c.surface2) || (isDark ? "#1E2D4A" : "#E2E8F0"),
-    text: normalizeHex(c.text || c.foreground || c.onSurface) || (isDark ? "#F8FAFC" : "#0F172A"),
-    textMuted: normalizeHex(c.textMuted || c.muted || c.secondaryText) || (isDark ? "#94A3B8" : "#475569"),
-    primary: normalizeHex(c.primary || c.accent1) || "#38BDF8",
-    secondary: normalizeHex(c.secondary || c.accent2) || "#818CF8",
+    surface: normalizeHex(c.surface || c.card || c.white || c["light-blue"] || c["pale-blue"]) || (isDark ? "#152036" : "#F8FAFC"),
+    surfaceAlt: normalizeHex(c.surfaceAlt || c.surface2 || c["pale-blue"] || c["light-blue"] || c["pale-orange"]) || (isDark ? "#1E2D4A" : "#E2E8F0"),
+    text: normalizeHex(c.text || c.foreground || c.onSurface) || (isDark ? "#F8FAFC" : primaryHex || "#0F172A"),
+    textMuted:
+      normalizeHex(c.textMuted || c.muted || c.secondaryText || secColors["medium-blue"]) ||
+      (isDark ? "#94A3B8" : "#475569"),
+    primary: primaryHex,
+    secondary: normalizeHex(typeof c.secondary === "string" ? c.secondary : secColors["medium-blue"] || c["pale-blue"] || c.accent2) || "#818CF8",
     accent: normalizeHex(c.accent || c.accent3) || "#34D399",
-    warning: normalizeHex(c.warning || c.accent4) || "#F59E0B",
+    warning: normalizeHex(c.warning || secColors.yellow || c.accent4) || "#F59E0B",
     danger: normalizeHex(c.danger || c.accent5) || "#F43F5E",
-    extra: normalizeHex(c.extra || c.accent6) || "#A78BFA",
+    extra: normalizeHex(c.extra || secColors.purple || secColors.green || c.accent6) || "#A78BFA",
   };
 
-  // Normalize typography
+  // Normalize typography + declare DeckCraft font substitutions explicitly (never silent)
   const t = resolvedTokens.typography || {};
+  const fallbacksMap = t.fallbacks || {};
+  const reqHeadingFont = t.headingFont || t.h1?.fontFamily || t.headline?.fontFamily || t.heading?.fontFamily || "Inter";
+  const reqBodyFont = t.bodyFont || t["body-md"]?.fontFamily || t.body?.fontFamily || "Inter";
+  const reqMonoFont = t.monoFont || t.mono?.fontFamily || "Liberation Mono";
+
+  const headingPick = pickDeckcraftFont(reqHeadingFont, fallbacksMap, "heading");
+  const bodyPick = pickDeckcraftFont(reqBodyFont, fallbacksMap, "body");
+  const monoPick = pickDeckcraftFont(reqMonoFont, fallbacksMap, "mono");
+  const fontSubstitutions = [headingPick.substitution, bodyPick.substitution, monoPick.substitution].filter(Boolean);
+
   const typography = {
-    headingFont: t.headingFont || t.headline?.fontFamily || t.heading?.fontFamily || "Inter",
-    bodyFont: t.bodyFont || t.body?.fontFamily || "Inter",
-    monoFont: t.monoFont || t.mono?.fontFamily || "Liberation Mono",
+    headingFont: headingPick.deckcraftFont,
+    bodyFont: bodyPick.deckcraftFont,
+    monoFont: monoPick.deckcraftFont,
+    requestedHeadingFont: reqHeadingFont,
+    requestedBodyFont: reqBodyFont,
+    requestedMonoFont: reqMonoFont,
     titleSizePt: Number(t.titleSizePt || 40),
     sectionSizePt: Number(t.sectionSizePt || 24),
     bodySizePt: Number(t.bodySizePt || 16),
@@ -265,19 +378,49 @@ function parseDesignMd(markdown) {
   // Normalize layout & shapes
   const l = resolvedTokens.layout || {};
   const s = resolvedTokens.shapes || resolvedTokens.rounded || {};
+  const videoMarginPx = l["video-16-9"]?.margin ? Number(l["video-16-9"].margin) : null;
   const layout = {
     slideWidthPt: Number(l.slideWidthPt || 960),
     slideHeightPt: Number(l.slideHeightPt || 540),
-    marginPt: Number(l.marginPt || 44),
-    gapPt: Number(l.gapPt || 24),
+    marginPt: Number(l.marginPt || (videoMarginPx ? Math.round(videoMarginPx / 2) : 44)),
+    gapPt: Number(l.gapPt || (l["video-16-9"]?.gutter ? Math.round(Number(l["video-16-9"].gutter) / 2) : 24)),
     maxWordsLiveSlide: Number(l.maxWordsLiveSlide || 45),
     maxWordsPrereadSlide: Number(l.maxWordsPrereadSlide || 110),
   };
 
+  const sharpContainers =
+    /^0(?:px|pt)?$/i.test(String(s["container-corners"] ?? "").trim()) ||
+    /container-corners\s*:\s*["']?0(?:px|pt)?["']?/i.test(unescaped) ||
+    /background blocks.*sharp-cornered|sharp-cornered content blocks/i.test(unescaped);
+
   const shapes = {
-    cornerRadiusPt: Number(s.cornerRadiusPt ?? 12),
-    smoothCorners: Number(s.smoothCorners ?? 60),
-    style: s.style || "rounded",
+    cornerRadiusPt: sharpContainers ? 0 : Number(s.cornerRadiusPt ?? 12),
+    smoothCorners: sharpContainers ? 0 : Number(s.smoothCorners ?? 60),
+    style: sharpContainers ? "sharp" : s.style || "rounded",
+    imageRadiusSmPx: s["rounded-sm"] || null,
+    imageRadiusLgPx: s["rounded-lg"] || null,
+  };
+
+  // Extract executable Brand Guardrails (enforced by Gate 1 lint_deck.mjs)
+  const accentOnlyHexes = [];
+  if (
+    palette.accent &&
+    (/emphasiser\s+only|precision\s+emphasiser|never\s+an\s+environment|never\s+a\s+background\s+fill|no\s+text\s+sitting\s+on\s+an?\s+orange\s+fill/i.test(
+      unescaped
+    ))
+  ) {
+    accentOnlyHexes.push({
+      hex: palette.accent,
+      maxAreaPct: 0.04,
+      noTextOnFill: true,
+      reason: "DESIGN.md marks accent color as precision emphasiser only (never large container fill or text background).",
+    });
+  }
+
+  const brandRules = {
+    accentOnlyHexes,
+    sharpContainers,
+    conformanceChecklist,
   };
 
   // WCAG contrast audit
@@ -322,25 +465,34 @@ function parseDesignMd(markdown) {
       )
     : null;
 
-  // Approved palette set for Gate 1 token compliance linting (includes optional darkPalette)
+  // Approved palette set for Gate 1 token compliance linting (includes all declared colors + optional darkPalette)
   const approvedHexColors = [
     ...new Set([
       ...Object.values(palette),
+      ...collectAllHexColors(c),
       ...(darkPalette ? Object.values(darkPalette) : []),
       "#FFFFFF",
       "#000000",
     ].filter(Boolean)),
   ];
 
+  const brandName =
+    resolvedTokens.brand?.name ||
+    resolvedTokens.name ||
+    (unescaped.match(/^#\s*DESIGN\.md\s*[—–-]\s*([^\n]+)/im)?.[1]?.trim()) ||
+    "Untitled Brand";
+
   return {
-    name: resolvedTokens.name || "Untitled Brand",
+    name: brandName,
     mode,
     palette,
     darkPalette,
     approvedHexColors,
     typography,
+    fontSubstitutions,
     layout,
     shapes,
+    brandRules,
     deckcraftTheme,
     contrastAudit,
     sectionsFound: sectionOrder,

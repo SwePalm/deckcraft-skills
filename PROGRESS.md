@@ -79,6 +79,10 @@ Build a portable, open-source **Agent Skills** suite (following the Agent Skills
 - [x] **Compact Segmented Controls:** `Delivery` (`Live Stage` | `Pre-read`), `Length` (`Short` | `Standard` | `Deep`), `Detail` (`Concise` | `Standard` | `Detailed`), and `Language` selector.
 - [x] **Polymorphic Grounding / Sources:** Handles `file`, `web`, and `chat` sources with progressive disclosure (interactive checklist for 2+ sources, quiet grounding badge for 1 source, hidden for 0).
 - [x] **Editable Story Beats Drawer:** Toggleable inline beat preview/editor before saving directly to `NARRATIVE.md`, `DESIGN.md`, and `direction-decision.json`.
+- [x] **Executable `DESIGN.md` Enforcement & Brand-Locked Mode:**
+  - Live client-side `DESIGN.md` parsing & Brand-Locked re-skinning in `direction-workbench-template.html`.
+  - Flexible real-world `DESIGN.md` compiler in `parse_design_md.mjs` (inline YAML objects, color aliases like `beige`/`pale-blue`, declared `fontSubstitutions`, `brandRules.accentOnlyHexes`, `brandRules.sharpContainers`, and `conformanceChecklist` extraction).
+  - Gate 1 enforcement in `lint_deck.mjs` (`forbidden_accent_fill` blocks signing on large/text-bearing accent fills; `sharp_container_violation` catches rounded/smooth containers when `0px` is required; declared font substitutions printed in `CHECK_REPORT.md`).
 
 ## Ideas for Next Session (v1.0 Packaging)
 - Add `tools/setup.mjs` one-command bootstrapper to download the right `deckcraft-cli` binary for macOS/Linux/Windows + install Playwright Chromium.

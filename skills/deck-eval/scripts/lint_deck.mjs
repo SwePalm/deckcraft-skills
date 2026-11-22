@@ -166,6 +166,14 @@ function formatCheckReportMd(report) {
   renderSection("Fix If Time", bySeverity.fix_if_time);
   renderSection("Cosmetic", bySeverity.cosmetic);
 
+  if (report.fontSubstitutions && report.fontSubstitutions.length > 0) {
+    lines.push(`## Brand Font Substitutions (Declared)`);
+    for (const fsSub of report.fontSubstitutions) {
+      lines.push(`- **${fsSub.role}:** ${fsSub.reason}`);
+    }
+    lines.push(``);
+  }
+
   lines.push(`## Not Checked (Explicit Boundary)`);
   for (const nc of notChecked) {
     lines.push(`- ${nc}`);
@@ -322,7 +330,7 @@ function main() {
         }
       }
 
-      // Fill color token compliance
+      // Fill color token compliance & executable DESIGN.md brandRules enforcement
       if (tokens && sh.fill) {
         const fillHex = normalizeHex(sh.fill);
         if (fillHex && approvedColors.size > 0 && !approvedColors.has(fillHex)) {
@@ -332,6 +340,56 @@ function main() {
             s.index,
             label,
             `Shape fill ${fillHex} is not in DESIGN.md approved palette.`
+          );
+        }
+
+        // Accent-only precision rule (e.g. "Orange is a precision emphasiser, never a background fill or under text")
+        const accentRule = (tokens.brandRules?.accentOnlyHexes || []).find(
+          (r) => normalizeHex(r.hex) === fillHex
+        );
+        if (accentRule) {
+          if (accentRule.noTextOnFill && sh.text && sh.text.trim()) {
+            addFinding(
+              "blocks_signing",
+              "forbidden_accent_fill",
+              s.index,
+              label,
+              `Brand rule violation: text placed on precision-accent-only fill ${fillHex}. ${accentRule.reason || ""}`
+            );
+          }
+          if (sh.box) {
+            const areaPct = (sh.box[2] * sh.box[3]) / (slideW * slideH);
+            const maxPct = accentRule.maxAreaPct ?? 0.04;
+            if (areaPct > maxPct) {
+              addFinding(
+                "blocks_signing",
+                "forbidden_accent_fill",
+                s.index,
+                label,
+                `Brand rule violation: precision-accent color ${fillHex} covers ${(areaPct * 100).toFixed(1)}% of slide (max ${(maxPct * 100).toFixed(0)}%).`
+              );
+            }
+          }
+        }
+      }
+
+      // Sharp-container geometry rule (e.g. container-corners: "0px"; rounded corners only on standalone images)
+      if (tokens?.brandRules?.sharpContainers && sh.kind !== "picture" && sh.kind !== "image" && sh.kind !== "video") {
+        const preset = String(sh.preset || detail?.shape?.geom?.preset || "").toLowerCase();
+        const geom = detail?.shape?.geom;
+        const isLargeContainer = sh.box && sh.box[2] >= 60 && sh.box[3] >= 36;
+        const isSmoothSquircle =
+          isLargeContainer &&
+          geom?.kind === "custom" &&
+          Array.isArray(geom?.paths) &&
+          geom.paths.some((p) => typeof p.d === "string" && /\bC\s/.test(p.d));
+        if (preset.includes("round") || isSmoothSquircle) {
+          addFinding(
+            "fix_if_time",
+            "sharp_container_violation",
+            s.index,
+            label,
+            `Brand rule violation: DESIGN.md requires sharp 0px container corners (found ${preset || "smooth-cornered container"}).`
           );
         }
       }
@@ -489,6 +547,8 @@ function main() {
       fixIfTime: findings.filter((f) => f.severity === "fix_if_time").length,
       cosmetic: findings.filter((f) => f.severity === "cosmetic").length,
     },
+    fontSubstitutions: tokens?.fontSubstitutions || [],
+    brandConformanceChecklist: tokens?.brandRules?.conformanceChecklist || [],
     findings,
     notChecked: [
       "Gate 2 multimodal visual inspection (text wrapping, glyph clipping inside boxes, aesthetic balance, Morph smoothness).",
