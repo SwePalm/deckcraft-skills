@@ -71,7 +71,7 @@ function parseArgs(argv) {
     else if (a === "--out-dir") opts.outDir = argv[++i];
     else if (a === "--name") opts.name = argv[++i];
     else if (a === "--scale") opts.scale = Number(argv[++i]);
-    else if (a === "--export-pptx") opts.exportPptx = true;
+    else if (a === "--export-pptx" || a === "--pptx") opts.exportPptx = true;
     else if (a === "--export-pdf") opts.exportPdf = true;
     else if (a === "--print") opts.print = true;
     else if (a === "--help" || a === "-h") {
@@ -144,6 +144,7 @@ function main() {
   if (opts.exportPptx) {
     const pptxPath = path.join(outDir, `${opts.name}.pptx`);
     execFileSync(cli, ["convert", deckPath, pptxPath], { encoding: "utf8" });
+    patchPptxVideoAutoplayLoop(pptxPath);
     exports.pptx = pptxPath;
   }
   if (opts.exportPdf) {
@@ -208,6 +209,89 @@ function main() {
   console.log(
     `Built ${manifest.slideCount} slides → ${deckPath} (${slideImages.length} PNGs, ${transitionRenders.length} transition strips)`
   );
+}
+
+/**
+ * Inject standard OOXML <p:timing> autoplay + infinite-loop triggers for any
+ * slide in an exported .pptx that embeds <a:videoFile> without <p:timing>.
+ * Ensures looping MP4 backgrounds play automatically in Microsoft PowerPoint.
+ */
+function patchPptxVideoAutoplayLoop(pptxPath) {
+  const py = `
+import re, sys, zipfile, os, tempfile
+
+pptx = sys.argv[1]
+pic_re = re.compile(r'<p:pic\\b[^>]*>.*?</p:pic>', re.DOTALL)
+id_re = re.compile(r'<p:cNvPr\\b[^>]*\\bid="(\\d+)"')
+
+def build_timing(spids):
+    pars = []
+    videos = []
+    cid = 3
+    for spid in spids:
+        c_par1, c_par2, c_par3, c_cmd = cid, cid+1, cid+2, cid+3
+        cid += 4
+        pars.append(
+            f'<p:par><p:cTn id="{c_par1}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst>'
+            f'<p:childTnLst><p:par><p:cTn id="{c_par2}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst>'
+            f'<p:childTnLst><p:par><p:cTn id="{c_par3}" presetID="1" presetClass="mediacall" presetSubtype="0" fill="hold" nodeType="afterEffect">'
+            f'<p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+            f'<p:cmd type="call" cmd="playFrom(0.0)"><p:cBhvr><p:cTn id="{c_cmd}" dur="1" fill="hold"/>'
+            f'<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl></p:cBhvr></p:cmd>'
+            f'</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>'
+        )
+    for spid in spids:
+        c_vid = cid
+        cid += 1
+        videos.append(
+            f'<p:video><p:cMediaNode mute="1" vol="0">'
+            f'<p:cTn id="{c_vid}" repeatCount="indefinite" fill="hold" display="0">'
+            f'<p:stCondLst><p:cond delay="indefinite"/></p:stCondLst></p:cTn>'
+            f'<p:tgtEl><p:spTgt spid="{spid}"/></p:tgtEl></p:cMediaNode></p:video>'
+        )
+    return (
+        '<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>'
+        '<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>'
+        + ''.join(pars) +
+        '</p:childTnLst></p:cTn>'
+        '<p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>'
+        '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst>'
+        '</p:seq>' + ''.join(videos) +
+        '</p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>'
+    )
+
+changed = False
+fd, tmp_path = tempfile.mkstemp(suffix='.pptx', dir=os.path.dirname(pptx))
+os.close(fd)
+try:
+    with zipfile.ZipFile(pptx, 'r') as zin, zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename.startswith('ppt/slides/slide') and item.filename.endswith('.xml'):
+                text = data.decode('utf-8')
+                if '<a:videoFile' in text and '<p:timing' not in text:
+                    spids = []
+                    for m in pic_re.finditer(text):
+                        chunk = m.group(0)
+                        if '<a:videoFile' in chunk:
+                            idm = id_re.search(chunk)
+                            if idm:
+                                spids.append(idm.group(1))
+                    if spids and '</p:sld>' in text:
+                        text = text.replace('</p:sld>', build_timing(spids) + '</p:sld>', 1)
+                        data = text.encode('utf-8')
+                        changed = True
+            zout.writestr(item, data)
+    if changed:
+        os.replace(tmp_path, pptx)
+    else:
+        os.remove(tmp_path)
+except Exception:
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
+    raise
+`;
+  execFileSync("python3", ["-c", py, pptxPath], { encoding: "utf8" });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

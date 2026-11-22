@@ -83,6 +83,8 @@ Build a portable, open-source **Agent Skills** suite (following the Agent Skills
   - Live client-side `DESIGN.md` parsing & Brand-Locked re-skinning in `direction-workbench-template.html`.
   - Flexible real-world `DESIGN.md` compiler in `parse_design_md.mjs` (inline YAML objects, color aliases like `beige`/`pale-blue`, declared `fontSubstitutions`, `brandRules.accentOnlyHexes`, `brandRules.sharpContainers`, and `conformanceChecklist` extraction).
   - Gate 1 enforcement in `lint_deck.mjs` (`forbidden_accent_fill` blocks signing on large/text-bearing accent fills; `sharp_container_violation` catches rounded/smooth containers when `0px` is required; declared font substitutions printed in `CHECK_REPORT.md`).
+  - Spec-aligned `assets.logo` relative path resolution (`default`/`light`/`dark`) in `parse_design_md.mjs` (stays strictly inside `google-labs-code/design.md` spec; no out-of-spec inline SVG blobs).
+- [x] **PowerPoint MP4 Autoplay + Loop Patch (`deckcraft_runner.mjs`):** Automatic post-export OOXML `<p:timing>` (`playFrom(0.0)` + `repeatCount="indefinite"`) injection for embedded video slides so looping 3D MP4 backgrounds play automatically in Microsoft PowerPoint.
 
 ## Ideas for Next Session (v1.0 Packaging)
 - Add `tools/setup.mjs` one-command bootstrapper to download the right `deckcraft-cli` binary for macOS/Linux/Windows + install Playwright Chromium.

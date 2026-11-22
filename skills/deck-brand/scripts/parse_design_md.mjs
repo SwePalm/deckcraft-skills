@@ -250,7 +250,7 @@ function pickDeckcraftFont(requested, fallbacksMap, role) {
   };
 }
 
-function parseDesignMd(markdown) {
+function parseDesignMd(markdown, baseDir = process.cwd()) {
   const unescaped = markdown.replace(/\\#/g, "#");
   let body = unescaped;
   const rawTokens = {};
@@ -482,6 +482,24 @@ function parseDesignMd(markdown) {
     (unescaped.match(/^#\s*DESIGN\.md\s*[—–-]\s*([^\n]+)/im)?.[1]?.trim()) ||
     "Untitled Brand";
 
+  // Spec-aligned static logo path references (assets.logo.{default,light,dark} or logo.{default,light,dark})
+  const rawLogo = resolvedTokens.assets?.logo || resolvedTokens.logo || null;
+  const resolveAssetPath = (rel) => {
+    if (!rel || typeof rel !== "string") return null;
+    const abs = path.resolve(baseDir, rel);
+    return { relative: rel, path: abs, exists: fs.existsSync(abs) };
+  };
+  const logoAssets =
+    rawLogo && typeof rawLogo === "object"
+      ? {
+          default: resolveAssetPath(rawLogo.default || rawLogo.file),
+          light: resolveAssetPath(rawLogo.light),
+          dark: resolveAssetPath(rawLogo.dark),
+        }
+      : typeof rawLogo === "string"
+        ? { default: resolveAssetPath(rawLogo), light: null, dark: null }
+        : null;
+
   return {
     name: brandName,
     mode,
@@ -492,6 +510,7 @@ function parseDesignMd(markdown) {
     fontSubstitutions,
     layout,
     shapes,
+    assets: logoAssets ? { logo: logoAssets } : null,
     brandRules,
     deckcraftTheme,
     contrastAudit,
@@ -524,7 +543,7 @@ const outDirIdx = args.indexOf("--out-dir");
 const outDir = outDirIdx !== -1 && args[outDirIdx + 1] ? path.resolve(args[outDirIdx + 1]) : null;
 
 const markdown = fs.readFileSync(inputPath, "utf8");
-const tokens = parseDesignMd(markdown);
+const tokens = parseDesignMd(markdown, path.dirname(inputPath));
 
 if (outDir) {
   fs.mkdirSync(outDir, { recursive: true });
